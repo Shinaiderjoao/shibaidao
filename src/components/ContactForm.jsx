@@ -7,9 +7,11 @@ function ContactForm() {
         message: ''
     });
     const [status, setStatus] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setIsSubmitting(true);
         setStatus('Enviando...');
 
         try {
@@ -31,11 +33,13 @@ function ContactForm() {
                 setStatus('Email enviado com sucesso!');
                 setFormData({ name: '', email: '', message: '' });
             } else {
-                setStatus('Erro ao enviar email. Tente novamente.');
+                setStatus(`Erro ao enviar email: ${data.error || 'Tente novamente mais tarde.'}`);
             }
         } catch (error) {
-            setStatus('Erro ao enviar email. Tente novamente.');
             console.error('Erro:', error);
+            setStatus('Erro ao enviar email. Por favor, tente novamente mais tarde.');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -51,6 +55,7 @@ function ContactForm() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
+                    disabled={isSubmitting}
                     className="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 focus:border-yellow-400 focus:outline-none"
                 />
             </div>
@@ -64,6 +69,7 @@ function ContactForm() {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     required
+                    disabled={isSubmitting}
                     className="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 focus:border-yellow-400 focus:outline-none"
                 />
             </div>
@@ -77,17 +83,23 @@ function ContactForm() {
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                     required
+                    disabled={isSubmitting}
                     className="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 focus:border-yellow-400 focus:outline-none"
                 />
             </div>
             <button
                 type="submit"
-                className="w-full bg-yellow-400 hover:bg-yellow-500 text-zinc-900 py-2 rounded-lg transition-colors"
+                disabled={isSubmitting}
+                className={`w-full bg-yellow-400 hover:bg-yellow-500 text-zinc-900 py-2 rounded-lg transition-colors ${
+                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
             >
-                Enviar Mensagem
+                {isSubmitting ? 'Enviando...' : 'Enviar Mensagem'}
             </button>
             {status && (
-                <p className="text-center text-sm">
+                <p className={`text-center text-sm ${
+                    status.includes('sucesso') ? 'text-green-400' : 'text-red-400'
+                }`}>
                     {status}
                 </p>
             )}

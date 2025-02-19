@@ -27,6 +27,13 @@ exports.handler = async function(event, context) {
   try {
     const { assunto, email, mensagem } = JSON.parse(event.body);
 
+    // Log para debug
+    console.log('Dados recebidos:', { assunto, email, mensagem });
+    console.log('Variáveis de ambiente:', {
+      user: process.env.EMAIL_USER,
+      to: process.env.EMAIL_TO
+    });
+
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -36,10 +43,11 @@ exports.handler = async function(event, context) {
     });
 
     const mailOptions = {
-      from: email,
+      from: `"Formulário de Contato" <${process.env.EMAIL_USER}>`,
       to: process.env.EMAIL_TO,
       subject: assunto,
-      text: `De: ${email}\n\n${mensagem}`
+      text: `De: ${email}\n\nMensagem:\n${mensagem}`,
+      replyTo: email
     };
 
     await transporter.sendMail(mailOptions);
@@ -47,16 +55,21 @@ exports.handler = async function(event, context) {
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ success: true })
+      body: JSON.stringify({ 
+        success: true,
+        message: 'Email enviado com sucesso!'
+      })
     };
   } catch (error) {
-    console.error('Erro:', error);
+    console.error('Erro detalhado:', error);
+    
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({ 
         success: false, 
-        error: error.message 
+        error: error.message,
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
       })
     };
   }
