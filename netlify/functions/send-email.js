@@ -28,19 +28,27 @@ exports.handler = async function(event, context) {
     const { assunto, email, mensagem } = JSON.parse(event.body);
 
     // Log para debug
-    console.log('Dados recebidos:', { assunto, email, mensagem });
-    console.log('Variáveis de ambiente:', {
+    console.log('Configurando email com:', {
       user: process.env.EMAIL_USER,
       to: process.env.EMAIL_TO
     });
 
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
+      },
+      tls: {
+        rejectUnauthorized: false
       }
     });
+
+    // Verificar conexão
+    await transporter.verify();
+    console.log('Conexão SMTP verificada');
 
     const mailOptions = {
       from: `"Formulário de Contato" <${process.env.EMAIL_USER}>`,
@@ -50,7 +58,8 @@ exports.handler = async function(event, context) {
       replyTo: email
     };
 
-    await transporter.sendMail(mailOptions);
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email enviado:', info.response);
 
     return {
       statusCode: 200,
@@ -69,7 +78,12 @@ exports.handler = async function(event, context) {
       body: JSON.stringify({ 
         success: false, 
         error: error.message,
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        config: {
+          user: process.env.EMAIL_USER ? 'configurado' : 'não configurado',
+          pass: process.env.EMAIL_PASS ? 'configurado' : 'não configurado',
+          to: process.env.EMAIL_TO ? 'configurado' : 'não configurado'
+        }
       })
     };
   }
